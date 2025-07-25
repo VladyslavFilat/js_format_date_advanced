@@ -8,33 +8,62 @@
  * @returns {string}
  */
 function formatDate(date, fromFormat, toFormat) {
-  const arrayDate = date.split(fromFormat[fromFormat.length - 1]);
-  const newSplit = toFormat[toFormat.length - 1];
-  const oldFormat = {};
-  const newFormat = [];
+  const fromSep = fromFormat[fromFormat.length - 1];
+  const toSep = toFormat[toFormat.length - 1];
 
-  for (let i = 0; i < fromFormat.length - 1; i++) {
-    oldFormat[fromFormat[i]] = arrayDate[i];
-  }
+  const parts = [];
+  let start = 0;
 
-  if (fromFormat.includes('YYYY') && toFormat.includes('YY')) {
-    oldFormat['YY'] = oldFormat['YYYY'].slice(-2);
-    delete oldFormat['YYYY'];
-  }
-
-  if (fromFormat.includes('YY') && toFormat.includes('YYYY')) {
-    if (Number(oldFormat['YY']) < 30) {
-      oldFormat['YYYY'] = '20' + oldFormat['YY'];
-    } else {
-      oldFormat['YYYY'] = '19' + oldFormat['YY'];
+  for (let i = 0; i <= date.length; i++) {
+    if (i === date.length || date[i] === fromSep) {
+      parts.push(date.slice(start, i));
+      start = i + 1;
     }
   }
 
-  for (const keys of Object.keys(oldFormat)) {
-    newFormat[toFormat.indexOf(keys)] = oldFormat[keys];
+  const dateMap = {};
+
+  for (let i = 0; i < fromFormat.length - 1; i++) {
+    dateMap[fromFormat[i]] = parts[i];
   }
 
-  return newFormat.join(newSplit);
+  function convertYear(yearStr, fromFmt, toFmt) {
+    if (fromFmt === toFmt) {
+      return yearStr;
+    }
+
+    if (fromFmt === 'YYYY' && toFmt === 'YY') {
+      return yearStr.slice(-2);
+    }
+
+    if (fromFmt === 'YY' && toFmt === 'YYYY') {
+      const num = parseInt(yearStr, 10);
+
+      if (num < 30) {
+        return '20' + (num < 10 ? '0' + num : num);
+      } else {
+        return '19' + num;
+      }
+    }
+
+    return yearStr;
+  }
+
+  const outputParts = [];
+
+  for (let i = 0; i < toFormat.length - 1; i++) {
+    const fmt = toFormat[i];
+
+    if (fmt === 'YY' || fmt === 'YYYY') {
+      const fromYearFmt = fromFormat.includes('YYYY') ? 'YYYY' : 'YY';
+
+      outputParts.push(convertYear(dateMap[fromYearFmt], fromYearFmt, fmt));
+    } else {
+      outputParts.push(dateMap[fmt]);
+    }
+  }
+
+  return outputParts.join(toSep);
 }
 
 module.exports = formatDate;
